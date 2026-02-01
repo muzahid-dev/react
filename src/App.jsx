@@ -9,7 +9,7 @@ export default function App() {
       const fetchTodos = async () => {
         try {
           const response = await fetch(
-            "https://solid-parakeet-g4wx9r64pj4jfvq6q-3001.app.github.dev/todos"
+            `https://solid-parakeet-g4wx9r64pj4jfvq6q-3001.app.github.dev/todos`
           );
 
           if (!response.ok) {
@@ -21,6 +21,7 @@ export default function App() {
         console.log("Todos fetched successfully:", data);
         } catch (error) {
           console.log("Error fetching todos:", error);
+          alert("Failed to fetch todos. Please try again later.");
         }
       };
 
@@ -33,15 +34,59 @@ export default function App() {
 
   const handleAddTask = () =>{
     if (newTask.trim() !== '') {
-      setTodos([...todos, newTask.trim()]);
-      setNewTask('');
+
+        const addTask = async () => {
+          try {
+            const response = await fetch(
+              `https://solid-parakeet-g4wx9r64pj4jfvq6q-3001.app.github.dev/todos`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title: newTask.trim(), completed: false }),
+              } 
+            );  
+            if (!response.ok) {
+              console.log(`HTTP error! status: ${response.status}`);
+              return;
+            }
+            const data = await response.json();
+            setTodos([...todos, data]);
+            setNewTask('');
+            console.log("Task added successfully:", data);
+          } catch (error) {
+            console.log("Error adding task:", error);
+            alert("Failed to add task. Please try again later.");
+          }
+        }
+
+    addTask();
     }
   }
 
-  const handleDeleteTask =(index) =>{
-    setTodos(todos.filter((_, i) => i !== index));
+  const handleDeleteTask = async(id) =>{
+    try {
+      const response = await fetch(
+        `https://solid-parakeet-g4wx9r64pj4jfvq6q-3001.app.github.dev/todos/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      alert("Task deleted successfully.");
+      if (!response.ok) {
+        console.log(`HTTP error! status: ${response.status}`);
+        return;
+      }
+
+      setTodos(todos.filter(todo => todo.id !== id));
+      console.log(`Task with ID ${id} deleted successfully.`);
+    } catch (error) {
+      console.log("Error deleting task:", error);
+      alert("Failed to delete task. Please try again later.");
+    }
   }
-  
+
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', padding: 20 }}>
       <h1>Welcome to ToDo App</h1>
@@ -51,9 +96,11 @@ export default function App() {
 
       <ul>
         {todos.map((todo, index) => (
-          <li key={index}>
+          <li className="todo-item" key={index}>
             {todo.title ? todo.title : todo}
-            <button style={{ marginLeft: 20 }} onClick={() => handleDeleteTask(index)}>Delete</button>
+            <span >
+              <button className='todo-btn' onClick={() => handleDeleteTask(todo.id)}>Delete</button>
+            </span>
           </li>
         ))}
       </ul>
